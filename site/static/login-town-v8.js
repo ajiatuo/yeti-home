@@ -336,7 +336,7 @@
       scale = Math.max(.1, world.getBoundingClientRect().width / WIDTH);
       if (!scrollPositionInitialized) {
         const viewportWidth = stage.clientWidth || stage.getBoundingClientRect().width;
-        if (stage.scrollWidth > viewportWidth + 1) stage.scrollLeft = Math.min(350, stage.scrollWidth - viewportWidth);
+        if (stage.scrollWidth > viewportWidth + 1) stage.scrollLeft = Math.round((stage.scrollWidth - viewportWidth) / 2);
         scrollPositionInitialized = true;
       }
       hotspots.forEach(positionButton); positionSpeech(); draw();
