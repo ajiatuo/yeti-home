@@ -12,6 +12,9 @@ const PROFILES = {
   yuki: { name: "阿安", nickname: "阿安", displayName: "阿安", tags: "虚构演示人物", avatar: "/static/pixel/avatar-yuki.png" },
 };
 const ROLES = { yeti: "admin", yuki: "user" };
+const HOUSES = {
+  sample: { id: "sample", name: "阿暖与阿安的家", owners: ["yeti", "yuki"], greeting: "欢迎来串门。沙发随便坐，茶在炉子上，留言簿在书桌上，写完记得盖好笔帽。" },
+};
 const SEED_NOTES = {
   yeti: [{ id: "demo-note-yeti", owner: "yeti", text: "DEMO · 今天在像素小镇散步。", date: "2026-01-01", createdAt: "2026-01-01T12:00:00+08:00", updatedAt: "2026-01-01T12:00:00+08:00", revision: 1, editable: true, visibility: "public" }],
   yuki: [{ id: "demo-note-yuki", owner: "yuki", text: "DEMO · 今天在像素小镇散步。", date: "2026-01-01", createdAt: "2026-01-01T12:00:00+08:00", updatedAt: "2026-01-01T12:00:00+08:00", revision: 1, editable: true, visibility: "public" }],
@@ -78,6 +81,8 @@ function allowed(path, actor) {
   if (path === "/yeti" || path.startsWith("/yeti/")) return !!(actor && actor.r === "admin");
   if (path === "/yuki" || path.startsWith("/yuki/")) return !!actor;
   if (path.startsWith("/cron-api/")) return !!(actor && (actor.r === "admin" || path.startsWith("/cron-api/yuki/")));
+  if (path.startsWith("/community/")) return !!actor;
+  if (path.startsWith("/api/house/")) return !!actor;
   return true;
 }
 function safeNext(value, who, role) {
@@ -132,6 +137,14 @@ async function handleGet(request, env, url, path, query, actor) {
     return htmlPage(loginPage(who, query.get("next") || ""));
   }
   if (path === "/logout") return redirect("/", COOKIE + "=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax");
+  const hg = path.match(/^\/api\/house\/([\w-]+)$/);
+  if (hg) {
+    if (!actor) return json({ error: "authentication_required" }, 401);
+    const h = HOUSES[hg[1]];
+    if (!h) return json({ error: "not_found" }, 404);
+    const msgs = await kvLoad(env, "house:" + hg[1] + ":messages", []);
+    return json({ house: { id: h.id, name: h.name, greeting: h.greeting, owners: h.owners, ownerNames: h.owners.map(o => PROFILES[o].name) }, me: actor.u, messages: msgs });
+  }
   if (!allowed(path, actor)) {
     if (!actor) return redirect("/login?as=" + (path.startsWith("/yuki") ? "yuki" : "yeti") + "&next=" + encodeURIComponent(path));
     return htmlPage('<html><body><h1>403 · 当前身份不能查看管理员页面</h1><a href="/yuki/">返回阿安首页</a></body></html>', 403);
@@ -184,6 +197,30 @@ async function handlePost(request, env, url, path, query) {
   if (!allowed(path, actor)) return json({ error: "forbidden" }, 403);
   if (path.startsWith("/cron-api/") || path.startsWith("/yeti/server/ai-api/")) return json({ error: "demo_read_only_no_execution" }, 409);
   let payload; try { payload = JSON.parse(raw); if (typeof payload !== "object" || payload === null || Array.isArray(payload)) throw 0; } catch { return json({ error: "invalid_json" }, 400); }
+    const hm = path.match(/^\/api\/house\/([\w-]+)\/messages$/);
+  if (hm) {
+    const h = HOUSES[hm[1]];
+    if (!h) return json({ error: "not_found" }, 404);
+    const key = "house:" + hm[1] + ":messages";
+    const items = await kvLoad(env, key, []);
+    if (payload.action === "create") {
+      const text = String(payload.text || "").trim();
+      if (!text || text.length > 200) return json({ error: "invalid_text" }, 400);
+      items.push({ id: "m-" + randHex(4), user: actor.u, name: PROFILES[actor.u].name, text, ts: isoShanghai() });
+      while (items.length > 300) items.shift();
+      await env.DATA.put(key, JSON.stringify(items));
+      return json({ ok: true, messages: items });
+    }
+    if (payload.action === "delete") {
+      const i = items.findIndex(x => x.id === payload.id);
+      if (i < 0) return json({ error: "not_found" }, 404);
+      if (items[i].user !== actor.u && !h.owners.includes(actor.u)) return json({ error: "forbidden" }, 403);
+      items.splice(i, 1);
+      await env.DATA.put(key, JSON.stringify(items));
+      return json({ ok: true, messages: items });
+    }
+    return json({ error: "unknown_action" }, 400);
+  }
   if (!["/api/notes", "/api/anniv", "/api/blog-drafts"].includes(path)) return json({ error: "demo_endpoint_unconfigured" }, 404);
   const who = payload.user || actor.u;
   if (who !== actor.u) return json({ error: "forbidden" }, 403);

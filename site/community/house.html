@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>样板间 · 阿暖与阿安的家</title>
+  <link rel="stylesheet" href="/static/community.css">
+</head>
+<body>
+  <header class="cv-top">
+    <a href="/community/">← 回村庄</a>
+    <div class="cv-title">🏠 样板间 · 阿暖与阿安的家</div>
+    <div class="cv-right">
+      <span id="cv-me">未登录</span>
+    </div>
+  </header>
+
+  <main class="hs-stage">
+    <img class="hs-img" src="/static/pixel/community/living-room.webp" alt="室内客厅">
+
+    <button class="hs-hot" data-panel="shelf" style="left:15%;top:8%;width:22%;height:66%">
+      <span class="hs-dot"></span>
+      <span class="hs-tag">书架 · 博客角</span>
+    </button>
+
+    <button class="hs-hot" data-panel="sofa" style="left:29%;top:50%;width:36%;height:34%">
+      <span class="hs-dot"></span>
+      <span class="hs-tag">沙发 · 屋主的话</span>
+    </button>
+
+    <button class="hs-hot" data-panel="desk" style="left:69%;top:52%;width:29%;height:40%">
+      <span class="hs-dot"></span>
+      <span class="hs-tag">书桌 · 留言簿</span>
+    </button>
+
+    <button class="hs-hot" id="hs-door" style="left:0.5%;top:9%;width:12%;height:74%">
+      <span class="hs-dot"></span>
+      <span class="hs-tag">回村庄</span>
+    </button>
+
+    <section class="hs-panel" id="hs-panel" hidden>
+      <div class="hs-panel-head">
+        <span id="hs-panel-title"></span>
+        <button id="hs-close" type="button">✕</button>
+      </div>
+      <div class="hs-panel-body" id="hs-panel-body"></div>
+    </section>
+  </main>
+
+  <script src="/static/community-house.js"></script>
+</body>
+</html>
