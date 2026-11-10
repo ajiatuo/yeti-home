@@ -81,7 +81,7 @@ function allowed(path, actor) {
   if (path === "/yeti" || path.startsWith("/yeti/")) return !!(actor && actor.r === "admin");
   if (path === "/yuki" || path.startsWith("/yuki/")) return !!actor;
   if (path.startsWith("/cron-api/")) return !!(actor && (actor.r === "admin" || path.startsWith("/cron-api/yuki/")));
-  if (path.startsWith("/community/")) return !!actor;
+  if (path === "/community" || path.startsWith("/community/")) return !!actor;
   if (path.startsWith("/api/house/")) return !!actor;
   return true;
 }
